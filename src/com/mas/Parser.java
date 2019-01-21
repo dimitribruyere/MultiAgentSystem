@@ -93,7 +93,7 @@ public class Parser
         return values;
     }
 
-    public void createXML(){
+    public void createXML(String number){
         try {
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder docBuilder = dbFactory.newDocumentBuilder();
@@ -204,11 +204,8 @@ public class Parser
             Transformer transformer = transformerFactory.newTransformer();
             transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
             DOMSource source = new DOMSource(doc);
-            StreamResult result = new StreamResult(new File("monFichier.xml"));
-
+            StreamResult result = new StreamResult(new File("XCSPscen"+number+".xml"));
             transformer.transform(source, result);
-
-            System.out.println("Fichier sauvegardé avec succès!");
 
         } catch (ParserConfigurationException pce) {
             pce.printStackTrace();
