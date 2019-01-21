@@ -177,7 +177,7 @@ public class Parser
 
             expression = doc.createElement("expression");
             functional = doc.createElement("functional");
-            functional.appendChild(doc.createTextNode(" gt(abs(sub(F1, F2)),VALUE) "));
+            functional.appendChild(doc.createTextNode(" neg(min(sub(abs(sub(X1, X2)),R),0)) "));
             expression.appendChild(functional);
             predicate.appendChild(expression);
             predicatesElement.appendChild(predicate);
