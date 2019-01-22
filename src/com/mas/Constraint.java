@@ -10,6 +10,8 @@ public class Constraint
 
     private int value;
 
+    private int cost;
+
     public int getF1()
     {
         return f1;
@@ -50,4 +52,13 @@ public class Constraint
         this.value = value;
     }
 
+    public int getCost()
+    {
+        return cost;
+    }
+
+    public void setCost(int cost)
+    {
+        this.cost = cost;
+    }
 }

@@ -73,6 +73,11 @@ public class Parser
                 constraint.setF2(Integer.parseInt(values.get(1)));
                 constraint.setDifference(values.get(2).equals("D"));
                 constraint.setValue(Integer.parseInt(values.get(4)));
+                if(values.size()==6){
+                    constraint.setCost(Integer.parseInt(values.get(5)));
+                } else {
+                    constraint.setCost(-1);
+                }
                 constraints.add(constraint);
             }
             buff.close();
@@ -97,6 +102,36 @@ public class Parser
         try {
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder docBuilder = dbFactory.newDocumentBuilder();
+
+            int a1=1, a2=1, a3=1, a4=1;
+            if(number.equals("04") || number.equals("05") || number.equals("06")|| number.equals("09") || number.equals("11"))
+            {
+                a1 = 1000;
+                a2 = 100;
+                a3 = 10;
+                a4 = 1;
+            }
+            if(number.equals("07"))
+            {
+                a1 = 1000000;
+                a2 = 10000;
+                a3 = 100;
+                a4 = 1;
+            }
+            if(number.equals("08"))
+            {
+                a1 = 4;
+                a2 = 3;
+                a3 = 2;
+                a4 = 1;
+            }
+            if(number.equals("10"))
+            {
+                a1 = 1000;
+                a2 = 100;
+                a3 = 2;
+                a4 = 1;
+            }
 
             //Root element
             Document doc = docBuilder.newDocument();
@@ -151,16 +186,15 @@ public class Parser
 
             //Predicates
             Element predicatesElement = doc.createElement("predicates");
-            predicatesElement.setAttribute("nbPredicates", "2");
+            predicatesElement.setAttribute("nbPredicates", "3");
             root.appendChild(predicatesElement);
 
-            //Predicate EQUAL
+            //Predicate EQUAL => Hard constraint
             Element predicate = doc.createElement("predicate");
             predicate.setAttribute("name", "EQUAL");
             Element parameters = doc.createElement("parameters");
             parameters.appendChild(doc.createTextNode(" int F1 int F2 int VALUE "));
             predicate.appendChild(parameters);
-
             Element expression = doc.createElement("expression");
             Element functional = doc.createElement("functional");
             functional.appendChild(doc.createTextNode(" eq(abs(sub(F1, F2)),VALUE) "));
@@ -168,16 +202,28 @@ public class Parser
             predicate.appendChild(expression);
             predicatesElement.appendChild(predicate);
 
-            //Predicate GT
+            //Predicate GTHARD => Hard constraint
             predicate = doc.createElement("predicate");
-            predicate.setAttribute("name", "GT");
+            predicate.setAttribute("name", "GTHARD");
             parameters = doc.createElement("parameters");
             parameters.appendChild(doc.createTextNode(" int F1 int F2 int VALUE "));
             predicate.appendChild(parameters);
-
             expression = doc.createElement("expression");
             functional = doc.createElement("functional");
-            functional.appendChild(doc.createTextNode(" neg(min(sub(abs(sub(X1, X2)),R),0)) "));
+            functional.appendChild(doc.createTextNode(" gt(abs(sub(F1, F2)),VALUE) "));
+            expression.appendChild(functional);
+            predicate.appendChild(expression);
+            predicatesElement.appendChild(predicate);
+
+            //Predicate GTSOFT => soft constraint
+            predicate = doc.createElement("function");
+            predicate.setAttribute("name", "GTSOFT");
+            parameters = doc.createElement("parameters");
+            parameters.appendChild(doc.createTextNode(" int F1 int F2 int VALUE int COST"));
+            predicate.appendChild(parameters);
+            expression = doc.createElement("expression");
+            functional = doc.createElement("functional");
+            functional.appendChild(doc.createTextNode(" if(gt(abs(sub(F1, F2)),VALUE),0, COST) "));
             expression.appendChild(functional);
             predicate.appendChild(expression);
             predicatesElement.appendChild(predicate);
@@ -191,9 +237,31 @@ public class Parser
                 constraint.setAttribute("name", c.getF1()+"_"+c.getF2()+"_"+c.getValue());
                 constraint.setAttribute("arity", "2");
                 constraint.setAttribute("scope", "f"+c.getF1()+" f"+c.getF2());
-                constraint.setAttribute("reference", c.isDifference()?"EQUAL":"GT");
+                if (c.isDifference()){
+                    constraint.setAttribute("reference", "EQUAL");
+                }
+                else if (c.getCost()!= -1) {
+                    constraint.setAttribute("reference", "GTSOFT");
+                } else {
+                    constraint.setAttribute("reference", "GTHARD");
+                }
                 Element param = doc.createElement("parameters");
-                String params = "f"+c.getF1()+" f"+c.getF2()+ " "+c.getValue();
+                int cost=-1;
+                switch (c.getCost()){
+                    case 1:
+                        cost = a1;
+                        break;
+                    case 2:
+                        cost = a2;
+                        break;
+                    case 3:
+                        cost = a3;
+                        break;
+                    case 4:
+                        cost = a4;
+                        break;
+                }
+                String params = "f"+c.getF1()+" f"+c.getF2()+ " "+c.getValue()+ (cost!=-1?" "+cost:"");
                 param.appendChild(doc.createTextNode(params));
                 constraint.appendChild(param);
                 constraintsElement.appendChild(constraint);
@@ -204,7 +272,7 @@ public class Parser
             Transformer transformer = transformerFactory.newTransformer();
             transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
             DOMSource source = new DOMSource(doc);
-            StreamResult result = new StreamResult(new File("XCSPscen"+number+".xml"));
+            StreamResult result = new StreamResult(new File("XML/XCSPscen"+number+".xml"));
             transformer.transform(source, result);
 
         } catch (ParserConfigurationException pce) {
